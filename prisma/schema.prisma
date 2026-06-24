@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SalesOrderStatus {
+  CRIADA
+  PLANEJADA
+  AGENDADA
+  EM_TRANSPORTE
+  ENTREGUE
+}
+
+model TransportType {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customers   CustomerAuthorizedTransport[]
+  salesOrders SalesOrder[]
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  document  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorizedTransports CustomerAuthorizedTransport[]
+  salesOrders          SalesOrder[]
+}
+
+model CustomerAuthorizedTransport {
+  customerId      String
+  transportTypeId String
+
+  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  transportType TransportType @relation(fields: [transportTypeId], references: [id], onDelete: Cascade)
+
+  @@id([customerId, transportTypeId])
+}
+
+model Item {
+  id          String   @id @default(uuid())
+  sku         String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems OrderItem[]
+}
+
+model SalesOrder {
+  id              String           @id @default(uuid())
+  orderNumber     String           @unique
+  status          SalesOrderStatus @default(CRIADA)
+  customerId      String
+  transportTypeId String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  customer         Customer         @relation(fields: [customerId], references: [id])
+  transportType    TransportType    @relation(fields: [transportTypeId], references: [id])
+  items            OrderItem[]
+  deliverySchedule DeliverySchedule?
+}
+
+model OrderItem {
+  id           String   @id @default(uuid())
+  salesOrderId String
+  itemId       String
+  quantity     Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  item       Item       @relation(fields: [itemId], references: [id])
+}
+
+model DeliverySchedule {
+  id           String   @id @default(uuid())
+  salesOrderId String   @unique
+  date         DateTime
+  startTime    String
+  endTime      String
+  confirmed    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+}
+
+model AuditRecord {
+  id            String   @id @default(uuid())
+  entityType    String
+  entityId      String
+  actionType    String
+  previousState Json?
+  newState      Json?
+  occurredAt    DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([entityId])
+  @@index([entityType])
+  @@index([occurredAt])
+}
