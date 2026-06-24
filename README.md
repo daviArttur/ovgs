@@ -228,7 +228,7 @@ A aplicação é **stateless** — escala horizontal sem mudança de código. Em
 | Otimização de queries | ✅ parcial | Índices no `AuditRecord`, filtros dinâmicos, pool de conexões |
 | Observabilidade | ❌ | OpenTelemetry + Prometheus/Grafana |
 | Cache | ❌ | Candidatos: `GET /transport-types` e `GET /items` (baixa volatilidade) |
-| CI/CD | ❌ | Scripts prontos para integrar com GitHub Actions |
+| CI/CD | ✅ | GitHub Actions: unit tests → integration tests em jobs sequenciais |
 | Segurança / Auth | ❌ | Fora do escopo explícito do desafio; JWT + guards NestJS |
 
 ---
