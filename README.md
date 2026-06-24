@@ -181,7 +181,9 @@ sequenceDiagram
     Handler->>DB: INSERT AuditRecord
 ```
 
-> `emitAsync` garante que falhas de auditoria surfaceiam. Trade-off: duas transações independentes — se a auditoria falhar após o save do agregado, o dado de negócio já foi persistido.
+> `emitAsync` garante que erros nos handlers de auditoria não sejam silenciados. Trade-off: duas transações independentes — se a auditoria falhar após o save do agregado, o dado de negócio já foi persistido.
+>
+> Em um cenário com serviço externo de auditoria (fila Kafka/RabbitMQ), o padrão **Transactional Outbox** eliminaria esse risco: o evento seria salvo na mesma transação do agregado em uma tabela `outbox`, e um worker dedicado faria a publicação na fila garantindo entrega. Dentro do monolito com `EventEmitter2` in-process, o overhead do Outbox não se justifica.
 
 ---
 
@@ -210,9 +212,7 @@ A aplicação é **stateless** — escala horizontal sem mudança de código. Em
 | Banco do domínio | PostgreSQL | NoSQL — FKs, ACID e filtros ad-hoc justificam o relacional |
 | Banco de auditoria | PostgreSQL + coluna `Json` | Document store — esquema variável por evento seria mais natural |
 | Repositórios | `abstract class` | `interface` — NestJS DI usa construtores como tokens |
-| Eventos | `emitAsync` | `emit` fire-and-forget — `emitAsync` garante que falhas surfaceiam |
-| Módulos | CommonJS | ESM — uuid v14 é ESM-only, requer `transformIgnorePatterns` no Jest |
-| Docker | Multi-stage + `npm prune` | Imagem única — build otimizado reduz de ~1 GB para ~350 MB |
+| Eventos | `emitAsync` | `emit` fire-and-forget — `emitAsync` garante que erros nos handlers não são silenciados |
 
 ---
 
